@@ -1,7 +1,10 @@
-import time
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 import urllib.request
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.common.by import By
 from tqdm import tqdm
 
 
@@ -13,17 +16,32 @@ class DownloadProgressBar(tqdm):
 
 
 def download_url(url, output_path):
-    with DownloadProgressBar(unit='B', unit_scale=True,
-                             miniters=1, desc=url.split('/')[-1]) as t:
-        urllib.request.urlretrieve(url, filename=output_path, reporthook=t.update_to)
+    try:
+        with DownloadProgressBar(unit='B', unit_scale=True,
+                                 miniters=1, desc=url.split('/')[-1]) as t:
+            urllib.request.urlretrieve(url, filename=output_path, reporthook=t.update_to)
+    except:
+        print("Net too slow!")
+        browser.close()
+        quit()
+
+
+def wait_till_page_loaded(xpath):
+    try:
+        WebDriverWait(browser, 10).until(EC.presence_of_element_located((By.XPATH, xpath)))
+    except TimeoutException:
+        print("Loading took too much time!")
+        browser.close()
+        quit()
+
 
 options = Options()
 options.headless = True
 browser = webdriver.Chrome(executable_path=r'chromedriver.exe', options=options)
 
-
-browser.get("http://dl9.rmdlsv.com/tv-series/Rick-And-Morty/S04/480P/")
-time.sleep(5)
+season_number = input("Enter Season Number: ")
+browser.get("http://dl9.rmdlsv.com/tv-series/Rick-And-Morty/S0"+season_number+"/480P/")
+wait_till_page_loaded('/html/body/pre/a[2]')
 episodeList = browser.find_elements_by_tag_name("a")
 flag = False
 idx = 0
@@ -33,8 +51,6 @@ for episode in episodeList:
     flag = True
     idx = idx + 1
 episodeNumber = int(input("Enter Episode Number: "))
-time.sleep(5)
-url = "http://dl9.rmdlsv.com/tv-series/Rick-And-Morty/S04/480P/" + str(episodeList[episodeNumber - 1].text)
-download_url(url,"")
-
-
+url = "http://dl9.rmdlsv.com/tv-series/Rick-And-Morty/S0"+season_number+"/480P/" + str(episodeList[episodeNumber].text)
+download_url(url, "")
+browser.close()
