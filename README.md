@@ -1,1 +1,1 @@
-# Rick-and-Morty-Season-4-Downloader
+# Rick-and-Morty-Downloader
