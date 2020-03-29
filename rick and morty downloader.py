@@ -18,7 +18,7 @@ def show_progress_bar(current_size, total_size):
 def download(download_url, fileName):
     r2 = requests.get(download_url, stream=True)
     total_size = int(r2.headers['content-length'])
-    print("Total Size Of The File(in KB): "+str(total_size))
+    print("Total Size Of The File(in KB): "+str(total_size/1024))
     current_size = 0
     file = open(fileName, 'wb')
     try:
@@ -32,7 +32,11 @@ def download(download_url, fileName):
 
 season_number = input("Enter Season Number: ")
 
-r = requests.get("http://dl9.rmdlsv.com/tv-series/Rick-And-Morty/S0" + season_number + "/480P/")
+try:
+    r = requests.get("http://dl9.rmdlsv.com/tv-series/Rick-And-Morty/S0" + season_number + "/480P/")
+except requests.exceptions.ConnectionError:
+    print("Connection Error")
+    quit()
 
 soup = BeautifulSoup(r.content, "html.parser")
 episodeList = soup.find_all('a')
