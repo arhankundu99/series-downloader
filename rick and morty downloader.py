@@ -1,56 +1,47 @@
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
 import urllib.request
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.wait import WebDriverWait
-from selenium.common.exceptions import TimeoutException
-from selenium.webdriver.common.by import By
-from tqdm import tqdm
+import requests
+from bs4 import BeautifulSoup
+import sys
 
 
-class DownloadProgressBar(tqdm):
-    def update_to(self, b=1, bsize=1, tsize=None):
-        if tsize is not None:
-            self.total = tsize
-        self.update(b * bsize - self.n)
+def show_progress_bar(current_size, total_size):
+    percentage = (current_size / total_size) * 100
+    progress_bar_length = 50
+    current_progress = int((current_size / total_size) * 50)
+    current_size = int(current_size / 1024)
+    progress_bar = "[" + "#" * current_progress + " " * (progress_bar_length - current_progress) + "]" \
+                   + " Current Downloaded(KB): " + str(current_size)
+
+    sys.stdout.write("\r{}".format(progress_bar))
+    sys.stdout.flush()
 
 
-def download_url(url, output_path):
+def download(download_url, fileName):
+    r2 = requests.get(download_url, stream=True)
+    total_size = int(r2.headers['content-length'])
+    print("Total Size Of The File(in KB): "+str(total_size))
+    current_size = 0
+    file = open(fileName, 'wb')
     try:
-        with DownloadProgressBar(unit='B', unit_scale=True,
-                                 miniters=1, desc=url.split('/')[-1]) as t:
-            urllib.request.urlretrieve(url, filename=output_path, reporthook=t.update_to)
-    except:
-        print("Net too slow!")
-        browser.close()
-        quit()
+        for data in r2.iter_content(chunk_size=1024):
+            current_size = current_size + 1024
+            file.write(data)
+            show_progress_bar(current_size, total_size)
+    finally:
+        file.close()
 
-
-def wait_till_page_loaded(xpath):
-    try:
-        WebDriverWait(browser, 10).until(EC.presence_of_element_located((By.XPATH, xpath)))
-    except TimeoutException:
-        print("Loading took too much time!")
-        browser.close()
-        quit()
-
-
-options = Options()
-options.headless = True
-browser = webdriver.Chrome(executable_path=r'chromedriver.exe', options=options)
 
 season_number = input("Enter Season Number: ")
-browser.get("http://dl9.rmdlsv.com/tv-series/Rick-And-Morty/S0"+season_number+"/480P/")
-wait_till_page_loaded('/html/body/pre/a[2]')
-episodeList = browser.find_elements_by_tag_name("a")
-flag = False
-idx = 0
-for episode in episodeList:
-    if flag:
-        print(str(idx) + ". " + episode.text)
-    flag = True
-    idx = idx + 1
+
+r = requests.get("http://dl9.rmdlsv.com/tv-series/Rick-And-Morty/S0" + season_number + "/480P/")
+
+soup = BeautifulSoup(r.content, "html.parser")
+episodeList = soup.find_all('a')
+for idx in range(1, len(episodeList)):
+    print(str(idx) + ". " + episodeList[idx].text)
+
 episodeNumber = int(input("Enter Episode Number: "))
-url = "http://dl9.rmdlsv.com/tv-series/Rick-And-Morty/S0"+season_number+"/480P/" + str(episodeList[episodeNumber].text)
-download_url(url, "")
-browser.close()
+url = "http://dl9.rmdlsv.com/tv-series/Rick-And-Morty/S0" + season_number + "/480P/" + episodeList[episodeNumber].text
+
+file_name = episodeList[episodeNumber].text
+download(url, file_name)
