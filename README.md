@@ -1,7 +1,7 @@
 # Rick-and-Morty-Downloader
 
+Download episodes of rick and morty by running this python script
+
 ## Requirements
-1. install selenium using `pip install selenium` command
-   Download chromedriver from <https://chromedriver.chromium.org/downloads>
-   After extracting chromedriver, extract and add its path in the `executable_path` variable
-2. install tqdm using `pip install tqdm` command
+1. install BeautifulSoup using `pip install bs4` command
+2. install requests module using `pip install requests` command
